@@ -5,12 +5,12 @@ __global__ void test_print_kernel(const float* pdata, int ndata){
 
     int idx = threadIdx.x + blockIdx.x * blockDim.x;
     /*    dims                 indexs
-        gridDim.z            blockIdx.z
-        gridDim.y            blockIdx.y
-        gridDim.x            blockIdx.x
-        blockDim.z           threadIdx.z
-        blockDim.y           threadIdx.y
-        blockDim.x           threadIdx.x
+        gridDim.z 1           blockIdx.z 0
+        gridDim.y 1           blockIdx.y 0
+        gridDim.x 1           blockIdx.x 0
+        blockDim.z  1         threadIdx.z 0
+        blockDim.y 1          threadIdx.y 0
+        blockDim.x 10          threadIdx.x 0-9
 
         Pseudo code:
         position = 0

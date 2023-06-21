@@ -1,7 +1,18 @@
 #include <stdio.h>
 #include <cuda_runtime.h>
+__device__  __host__ void show_info(){
+    printf("我是show_info函数嘿嘿嘿\n");
+}
 
 __global__ void test_print_kernel(const float* pdata, int ndata){
+    //此处为核函数内的作用域
+    //我想在这里调用一个我自定义的show_info函数。会报错
+        //src/kernel.cu(10): error: calling a __host__ function("show_info") 
+        //from a __global__ function("test_print_kernel") is not allowed
+    //所以，自定义的show_info函数被归为主机函数。
+    //如果想在和函数内调用，必须在函数前 加 __device__
+    //同样的，show_info函数会被调用线程数次；
+    show_info();
 
     int idx = threadIdx.x + blockIdx.x * blockDim.x;
     /*    dims                 indexs
@@ -22,6 +33,12 @@ __global__ void test_print_kernel(const float* pdata, int ndata){
 }
 
 void test_print(const float* pdata, int ndata){
+    //此区域被认为是Host函数的作用域。
+    show_info();  //对于没有__device__修饰的show_info函数来说，这里是可以被调用的。但是此时，核函数中不能调用
+    //对于有__device__修饰的show_info函数来说，这里是不可以被调用的。但是此时，核函数中能调用
+    //如果想show_info被两方同时调用，需要用两个前缀修饰 __device__  __host__ show_info()
+
+
 
     // <<<gridDim, blockDim, bytes_of_shared_memory, stream>>>
     test_print_kernel<<<1, ndata, 0, nullptr>>>(pdata, ndata);

@@ -165,84 +165,41 @@
 
 
 
-// #include <cuda_runtime.h>
-// #include <stdio.h>
-
-// #define checkRuntime(op)  __check_cuda_runtime((op), #op, __FILE__, __LINE__)
-
-// bool __check_cuda_runtime(cudaError_t code, const char* op, const char* file, int line){
-//     if(code != cudaSuccess){    
-//         const char* err_name = cudaGetErrorName(code);    
-//         const char* err_message = cudaGetErrorString(code);  
-//         printf("runtime error %s:%d  %s failed. \n  code = %s, message = %s\n", file, line, op, err_name, err_message);   
-//         return false;
-//     }
-//     return true;
-// }
-
-// void test_print(const float* pdata, int ndata);
-
-// int main(){
-//     float* parray_host = nullptr;
-//     float* parray_device = nullptr;
-//     int narray = 10;
-//     int array_bytes = sizeof(float) * narray;
-
-//     parray_host = new float[narray];
-//     checkRuntime(cudaMalloc(&parray_device, array_bytes));
-
-//     for(int i = 0; i < narray; ++i)
-//         parray_host[i] = i;
-    
-//     checkRuntime(cudaMemcpy(parray_device, parray_host, array_bytes, cudaMemcpyHostToDevice));
-//     test_print(parray_device, narray);
-//     checkRuntime(cudaDeviceSynchronize());
-
-//     checkRuntime(cudaFree(parray_device));
-//     delete[] parray_host;
-//     return 0;
-// }
-
-
-
-//==========================================================================================================================
-#include <stdio.h>
 #include <cuda_runtime.h>
+#include <stdio.h>
 
-__global__ void test_print_kernel(const float* pdata, int ndata){
+#define checkRuntime(op)  __check_cuda_runtime((op), #op, __FILE__, __LINE__)
 
-    int idx = threadIdx.x + blockIdx.x * blockDim.x;
-    /*    dims                 indexs
-        gridDim.z            blockIdx.z
-        gridDim.y            blockIdx.y
-        gridDim.x            blockIdx.x
-        blockDim.z           threadIdx.z
-        blockDim.y           threadIdx.y
-        blockDim.x           threadIdx.x
-
-        Pseudo code:
-        position = 0
-        for i in 6:
-            position *= dims[i]
-            position += indexs[i]
-    */
-    printf("Element[%d] = %f, threadIdx.x=%d, blockIdx.x=%d, blockDim.x=%d\n", idx, pdata[idx], threadIdx.x, blockIdx.x, blockDim.x);
-}
-
-void test_print(const float* pdata, int ndata){
-
-    // <<<gridDim, blockDim, bytes_of_shared_memory, stream>>>
-    test_print_kernel<<<1, ndata, 0, nullptr>>>(pdata, ndata);
-
-    // 在核函数执行结束后，通过cudaPeekAtLastError获取得到的代码，来知道是否出现错误
-    // cudaPeekAtLastError和cudaGetLastError都可以获取得到错误代码
-    // cudaGetLastError是获取错误代码并清除掉，也就是再一次执行cudaGetLastError获取的会是success
-    // 而cudaPeekAtLastError是获取当前错误，但是再一次执行 cudaPeekAtLastError 或者 cudaGetLastError 拿到的还是那个错
-    // cuda的错误会传递，如果这里出错了，不移除。那么后续的任意api的返回值都会是这个错误，都会失败
-    cudaError_t code = cudaPeekAtLastError();
+bool __check_cuda_runtime(cudaError_t code, const char* op, const char* file, int line){
     if(code != cudaSuccess){    
-        const char* err_name    = cudaGetErrorName(code);    
+        const char* err_name = cudaGetErrorName(code);    
         const char* err_message = cudaGetErrorString(code);  
-        printf("kernel error %s:%d  test_print_kernel failed. \n  code = %s, message = %s\n", __FILE__, __LINE__, err_name, err_message);   
+        printf("runtime error %s:%d  %s failed. \n  code = %s, message = %s\n", file, line, op, err_name, err_message);   
+        return false;
     }
+    return true;
 }
+
+void test_print(const float* pdata, int ndata);
+
+int main(){
+    float* parray_host = nullptr;
+    float* parray_device = nullptr;
+    int narray = 10;
+    int array_bytes = sizeof(float) * narray; //10个float字节大小
+
+    parray_host = new float[narray]; 
+    checkRuntime(cudaMalloc(&parray_device, array_bytes)); //给数组创建内存
+
+    for(int i = 0; i < narray; ++i)
+        parray_host[i] = i; //给数组赋值 0-9
+    
+    checkRuntime(cudaMemcpy(parray_device, parray_host, array_bytes, cudaMemcpyHostToDevice));
+    test_print(parray_device, narray); //核函数
+    checkRuntime(cudaDeviceSynchronize());
+
+    checkRuntime(cudaFree(parray_device));
+    delete[] parray_host;
+    return 0;
+}
+
