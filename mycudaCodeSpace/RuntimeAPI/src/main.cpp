@@ -56,7 +56,7 @@
 // }
 
 
-//=============================================
+//=============================================内存==================
 
 // // CUDA运行时头文件
 // #include <cuda_runtime.h>
@@ -104,7 +104,7 @@
 // }
 
 
-//==========================================================================================================================
+//===========================================流===============================================================================
 
 
 
@@ -161,9 +161,49 @@
 //     return 0;
 // }
 
-//==========================================================================================================================
+//======================================核函数===================================================================================
 
 
+
+// #include <cuda_runtime.h>
+// #include <stdio.h>
+
+// #define checkRuntime(op)  __check_cuda_runtime((op), #op, __FILE__, __LINE__)
+
+// bool __check_cuda_runtime(cudaError_t code, const char* op, const char* file, int line){
+//     if(code != cudaSuccess){    
+//         const char* err_name = cudaGetErrorName(code);    
+//         const char* err_message = cudaGetErrorString(code);  
+//         printf("runtime error %s:%d  %s failed. \n  code = %s, message = %s\n", file, line, op, err_name, err_message);   
+//         return false;
+//     }
+//     return true;
+// }
+
+// void test_print(const float* pdata, int ndata);
+
+// int main(){
+//     float* parray_host = nullptr;
+//     float* parray_device = nullptr;
+//     int narray = 10;
+//     int array_bytes = sizeof(float) * narray; //10个float字节大小
+
+//     parray_host = new float[narray]; 
+//     checkRuntime(cudaMalloc(&parray_device, array_bytes)); //给数组创建内存
+
+//     for(int i = 0; i < narray; ++i)
+//         parray_host[i] = i; //给数组赋值 0-9
+    
+//     checkRuntime(cudaMemcpy(parray_device, parray_host, array_bytes, cudaMemcpyHostToDevice));
+//     test_print(parray_device, narray); //核函数
+//     checkRuntime(cudaDeviceSynchronize());
+
+//     checkRuntime(cudaFree(parray_device));
+//     delete[] parray_host;
+//     return 0;
+// }
+
+//======================================1.7shared memory===================================================================================
 
 #include <cuda_runtime.h>
 #include <stdio.h>
@@ -180,26 +220,17 @@ bool __check_cuda_runtime(cudaError_t code, const char* op, const char* file, in
     return true;
 }
 
-void test_print(const float* pdata, int ndata);
+void launch();
 
 int main(){
-    float* parray_host = nullptr;
-    float* parray_device = nullptr;
-    int narray = 10;
-    int array_bytes = sizeof(float) * narray; //10个float字节大小
 
-    parray_host = new float[narray]; 
-    checkRuntime(cudaMalloc(&parray_device, array_bytes)); //给数组创建内存
+    cudaDeviceProp prop;
+    checkRuntime(cudaGetDeviceProperties(&prop, 0));
+    printf("prop.sharedMemPerBlock = %.2f KB\n", prop.sharedMemPerBlock / 1024.0f);
 
-    for(int i = 0; i < narray; ++i)
-        parray_host[i] = i; //给数组赋值 0-9
-    
-    checkRuntime(cudaMemcpy(parray_device, parray_host, array_bytes, cudaMemcpyHostToDevice));
-    test_print(parray_device, narray); //核函数
+    launch();
+    checkRuntime(cudaPeekAtLastError());
     checkRuntime(cudaDeviceSynchronize());
-
-    checkRuntime(cudaFree(parray_device));
-    delete[] parray_host;
+    printf("done\n");
     return 0;
-}
-
+}   

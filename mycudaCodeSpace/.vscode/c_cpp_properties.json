@@ -4,8 +4,7 @@
             "name": "Linux",
             "includePath": [
                 "${workspaceFolder}/**",
-                "/home/shenlan09/miniconda3/envs/yxymakefile/lib/python3.8/site-packages/trtpy/trt8cuda112cudnn8/include/**",
-                "/home/shenlan09/miniconda3/envs/yxymakefile/lib/python3.8/site-packages/trtpy/trt8cuda112cudnn8/include/cuda"
+                "/home/shenlan09/miniconda3/envs/yxymakefile/lib/python3.8/site-packages/trtpy/trt8cuda112cudnn8/include/**"
             ],
             "compilerPath": "/usr/bin/gcc",
             "cStandard": "gnu11",

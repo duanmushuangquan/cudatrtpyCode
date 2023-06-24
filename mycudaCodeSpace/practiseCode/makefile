@@ -22,7 +22,7 @@ cu_objs := $(cu_objs:$(srcdir)/%=$(objdir)/%)
 cu_mk   := $(cu_objs:.cu.o=.cu.mk)
 
 # 定义opencv和cuda需要用到的库文件
-link_cuda      := cudart
+link_cuda      := cuda cudart
 link_trtpro    := 
 link_tensorRT  := 
 link_sys       := stdc++ dl

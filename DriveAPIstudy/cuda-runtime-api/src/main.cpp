@@ -14,25 +14,18 @@ bool __check_cuda_runtime(cudaError_t code, const char* op, const char* file, in
     return true;
 }
 
-void test_print(const float* pdata, int ndata);
+void launch();
 
 int main(){
-    float* parray_host = nullptr;
-    float* parray_device = nullptr;
-    int narray = 10;
-    int array_bytes = sizeof(float) * narray;
+    //1.0 获取设备信息。单独打印sharedMem的大小
+    //越近越快，越近越贵
+    cudaDeviceProp prop;
+    checkRuntime(cudaGetDeviceProperties(&prop, 0));
+    printf("prop.sharedMemPerBlock = %.2f KB\n", prop.sharedMemPerBlock / 1024.0f); //只有48kb
 
-    parray_host = new float[narray];
-    checkRuntime(cudaMalloc(&parray_device, array_bytes));
-
-    for(int i = 0; i < narray; ++i)
-        parray_host[i] = i;
-    
-    checkRuntime(cudaMemcpy(parray_device, parray_host, array_bytes, cudaMemcpyHostToDevice));
-    test_print(parray_device, narray);
+    launch(); //写在shared-memory.cu中
+    checkRuntime(cudaPeekAtLastError());
     checkRuntime(cudaDeviceSynchronize());
-
-    checkRuntime(cudaFree(parray_device));
-    delete[] parray_host;
+    printf("done\n");
     return 0;
 }

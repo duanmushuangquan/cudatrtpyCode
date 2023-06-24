@@ -1,4 +1,4 @@
-objs/kernel.cu.o : src/kernel.cu \
+objs/shared-memory.cu.o : src/shared-memory.cu \
     /usr/include/stdc-predef.h \
     /home/shenlan09/miniconda3/envs/yxymakefile/lib/python3.8/site-packages/trtpy/trt8cuda112cudnn8/include/cuda/cuda_runtime.h \
     /home/shenlan09/miniconda3/envs/yxymakefile/lib/python3.8/site-packages/trtpy/trt8cuda112cudnn8/include/cuda/crt/host_config.h \
