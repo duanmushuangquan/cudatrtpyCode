@@ -2,6 +2,8 @@
 #include <cuda_runtime.h>
 #include <iostream>
 #include <stdio.h>
+#include <chrono>
+#include <thread>
 
 using namespace std;
 
@@ -188,18 +190,52 @@ bool __check_cuda_driver_error_code(CUresult code, const char* op, const char* f
 
 // ================================共享内存===========================
 
-void launch(); //定义cuda里面执行核函数的Host函数
+// void launch(); //定义cuda里面执行核函数的Host函数
 
-int main(){
-    int device_id = 0;
-    checkRuntime(cudaSetDevice(device_id));
-    cudaDeviceProp deviceProp;
-    checkRuntime(cudaGetDeviceProperties(&deviceProp, device_id));
+// int main(){
+//     int device_id = 0;
+//     checkRuntime(cudaSetDevice(device_id));
+//     cudaDeviceProp deviceProp;
+//     checkRuntime(cudaGetDeviceProperties(&deviceProp, device_id));
 
-    printf("deviceProp.sharedMemPerBlock,也就是共享内存大小:=%f  KB\n", deviceProp.sharedMemPerBlock / 1024.0f);
+//     printf("deviceProp.sharedMemPerBlock,也就是共享内存大小:=%f  KB\n", deviceProp.sharedMemPerBlock / 1024.0f);
     
-    launch();
-    checkRuntime(cudaDeviceSynchronize());
-    printf("结束");
+//     launch();
+//     checkRuntime(cudaDeviceSynchronize());
+//     printf("结束");
+//     return 0;
+// }
+
+//==========================================
+int main(){
+    printf("chrono::system_clock::now()的结果为：=%d\n", chrono::system_clock::now());
+    printf("chrono::system_clock::now().time_since_epoch()/ 1000.0的结果为：=%d\n", chrono::system_clock::now().time_since_epoch());
+    printf("chrono::duration_cast<chrono::microseconds>(chrono::system_clock::now().time_since_epoch()).count() / 1000.0：=%f\n", chrono::duration_cast<chrono::microseconds>(chrono::system_clock::now().time_since_epoch()).count() / 1000.0);
+    auto tic = chrono::duration_cast<chrono::microseconds>(chrono::system_clock::now().time_since_epoch()).count() / 1000.0;
+    std::this_thread::sleep_for(std::chrono::seconds(3));
+    auto toc = chrono::duration_cast<chrono::microseconds>(chrono::system_clock::now().time_since_epoch()).count() / 1000.0;
+    printf("chrono::duration_cast<chrono::microseconds>(chrono::system_clock::now().time_since_epoch()).count() / 1000.0：=%f\n", chrono::duration_cast<chrono::microseconds>(chrono::system_clock::now().time_since_epoch()).count() / 1000.0);
+    printf("%f\n",toc - tic);
+    printf("main函数启动了\n");
     return 0;
+    /*
+    这行代码使用 C++ 的 `<chrono>` 库来获取当前时间并计算以毫秒为单位的时间戳。
+
+    具体解释如下：
+
+    1. `chrono::system_clock::now()`：获取当前的系统时钟时间点。
+
+    2. `.time_since_epoch()`：获取当前时间点与纪元（epoch）时间点之间的时间间隔。
+
+    3. `chrono::duration_cast<chrono::microseconds>(...)`：将时间间隔转换为微秒（microseconds）的类型。
+
+    4. `.count()`：获取时间间隔的计数值。
+
+    5. `/ 1000.0`：将计数值除以 1000，将微秒转换为毫秒。
+
+    最后，将得到的时间戳保存在 `tic` 变量中。
+
+    请注意，这行代码的作用是获取当前时间的毫秒级时间戳，可能用于性能计时或时间测量等应用场景。
+    
+    */
 }

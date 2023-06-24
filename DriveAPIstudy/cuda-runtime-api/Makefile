@@ -6,6 +6,7 @@ objdir    := objs
 stdcpp    := c++11
 cuda_home := /home/shenlan09/miniconda3/envs/yxymakefile/lib/python3.8/site-packages/trtpy/trt8cuda112cudnn8
 syslib    := /home/shenlan09/miniconda3/envs/yxymakefile/lib/python3.8/site-packages/trtpy/lib
+cpp_pkg   := /home/shenlan09/miniconda3/envs/yxymakefile/lib/python3.8/site-packages/trtpy/cpp-packages
 cuda_arch := 
 nvcc      := $(cuda_home)/bin/nvcc -ccbin=$(cc)
 
@@ -25,18 +26,19 @@ cu_mk   := $(cu_objs:.cu.o=.cu.mk)
 link_cuda      := cudart
 link_trtpro    := 
 link_tensorRT  := 
+link_opencv    := opencv_core opencv_imgcodecs
 link_sys       := stdc++ dl
-link_librarys  := $(link_cuda) $(link_tensorRT) $(link_sys)
+link_librarys  := $(link_cuda) $(link_tensorRT) $(link_sys) $(link_opencv)
 
 # 定义头文件路径，请注意斜杠后边不能有空格
 # 只需要写路径，不需要写-I
 include_paths := src              \
     $(cuda_home)/include/cuda     \
 	$(cuda_home)/include/tensorRT \
-	$(cuda_home)/include/protobuf
+	$(cpp_pkg)/opencv4.2/include
 
 # 定义库文件路径，只需要写路径，不需要写-L
-library_paths := $(cuda_home)/lib64 $(syslib)
+library_paths := $(cuda_home)/lib64 $(syslib) $(cpp_pkg)/opencv4.2/lib
 
 # 把library path给拼接为一个字符串，例如a b c => a:b:c
 # 然后使得LD_LIBRARY_PATH=a:b:c
@@ -95,7 +97,7 @@ $(objdir)/%.cpp.mk : $(srcdir)/%.cpp
 # 编译cu文件的依赖项，生成cumk文件
 $(objdir)/%.cu.mk : $(srcdir)/%.cu
 	@echo Compile depends CUDA $<
-	@mkdir -p $(dir $@)
+	@mkdir -p $(dir $@)	
 	@$(nvcc) -M $< -MF $@ -MT $(@:.cu.mk=.cu.o) $(cu_compile_flags)
 
 # 定义清理指令

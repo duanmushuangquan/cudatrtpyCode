@@ -124,4 +124,23 @@ objs/main.cpp.o: src/main.cpp /usr/include/stdc-predef.h \
  /usr/include/c++/5/bits/locale_facets.tcc \
  /usr/include/c++/5/bits/basic_ios.tcc \
  /usr/include/c++/5/bits/ostream.tcc /usr/include/c++/5/istream \
- /usr/include/c++/5/bits/istream.tcc
+ /usr/include/c++/5/bits/istream.tcc /usr/include/c++/5/chrono \
+ /usr/include/c++/5/ratio /usr/include/c++/5/limits \
+ /usr/include/c++/5/ctime /usr/include/c++/5/bits/parse_numbers.h \
+ /usr/include/c++/5/thread /usr/include/c++/5/functional \
+ /usr/include/c++/5/typeinfo /usr/include/c++/5/tuple \
+ /usr/include/c++/5/utility /usr/include/c++/5/bits/stl_relops.h \
+ /usr/include/c++/5/array /usr/include/c++/5/bits/uses_allocator.h \
+ /usr/include/c++/5/memory /usr/include/c++/5/bits/stl_construct.h \
+ /usr/include/c++/5/bits/stl_uninitialized.h \
+ /usr/include/c++/5/bits/stl_tempbuf.h \
+ /usr/include/c++/5/bits/stl_raw_storage_iter.h \
+ /usr/include/c++/5/ext/concurrence.h \
+ /usr/include/c++/5/bits/unique_ptr.h \
+ /usr/include/c++/5/bits/shared_ptr.h \
+ /usr/include/c++/5/bits/shared_ptr_base.h \
+ /usr/include/c++/5/bits/allocated_ptr.h \
+ /usr/include/c++/5/ext/aligned_buffer.h \
+ /usr/include/c++/5/bits/shared_ptr_atomic.h \
+ /usr/include/c++/5/bits/atomic_base.h \
+ /usr/include/c++/5/backward/auto_ptr.h

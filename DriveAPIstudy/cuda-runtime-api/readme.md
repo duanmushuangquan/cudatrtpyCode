@@ -1,22 +1,17 @@
 # 知识点
-1. sharedMemPerBlock 指示了block中最大可用的共享内存
-    - 所以可以使得 block 内的threads可以相互通信。
-      - sharedMemPerBlock 的应用例子 [1.example1.jpg](figure/1.example1.jpg) [2.example2.jpg](figure/2.example2.jpg)
-2. 共享内存是片上内存，更靠近计算单元，因此比globalMem速度更快，通常可以充当缓存使用
-    - 数据先读入到sharedMem，做各类计算时，使用sharedMem而非globalMem
-3. demo_kernel<<<1, 1, 12, nullptr>>>();其中第三个参数12，是指定动态共享内存dynamic_shared_memory的大小
-    - dynamic_shared_memory变量必须使用extern __shared__开头
-    - 并且定义为不确定大小的数组[]
-    - 12的单位是bytes，也就是可以安全存放3个float
-    - 变量放在函数外面和里面都一样
-    - 其指针由cuda调度器执行时赋值
-4. static_shared_memory作为静态分配的共享内存
-    - 不加extern，以__shared__开头
-    - 定义时需要明确数组的大小
-    - 静态分配的地址比动态分配的地址低
-5. 动态共享变量，无论定义多少个，地址都一样
-6. 静态共享变量，定义几个地址随之叠加
-7. 如果配置的各类共享内存总和大于sharedMemPerBlock，则核函数执行出错，Invalid argument
-    - 不同类型的静态共享变量定义，其内存划分并不一定是连续的
-    - 中间会有内存对齐策略，使得第一个和第二个变量之间可能存在空隙
-    - 因此你的变量之间如果存在空隙，可能小于全部大小的共享内存就会报错
+0. [抖音辅助讲解视频合集](https://www.douyin.com/video/7074804712570113311)，建议以1.5倍速配合代码注解的提示观看
+
+1. 仿射变换+双线性插值，在CV场景下，解决图像预处理是非常合适的。[若有疑问，可点击抖音短视频辅助讲解(建议1.5倍速观看)](https://v.douyin.com/NhM6QnU/)
+    - 例如Yolo的letterbox，实则是边缘填充
+    - 例如CenterNet的居中对齐
+2. 该代码仿射变换对象是CV8UC3的图像，经过简单修改后，可以做到端到端，把结果输入到tensorRT中
+    - 可以直接实现WarpAffine + Normalize + SwapRB
+        - 参考这里：https://github.com/shouxieai/tensorRT_Pro/blob/main/src/tensorRT/common/preprocess_kernel.cu
+    - 这样的话性能会非常好
+3. 在仿射核函数里面，我们循环的次数，是dst.width * dst.height，以dst为参照集
+    - 也因此，无论src多大，dst固定的话，计算量也是固定的
+    - 另外，核函数里面得到的是dst.x、dst.y，我们需要获取对应在src上的坐标
+        - 所以需要src.x, src.y = project(matrix, dst.x, dst.y)
+        - 因此这里的project是dst -> src的变换
+        - AffineMatrix的compute函数计算的是src -> dst的变换矩阵i2d
+        - 所以才需要invertAffineTransform得到逆矩阵，即dst -> src，d2i
