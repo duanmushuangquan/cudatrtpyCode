@@ -1,4 +1,4 @@
-objs/test.cu.o : src/test.cu \
+objs/affine.cu.o : src/affine.cu \
     /usr/include/stdc-predef.h \
     /home/shenlan09/miniconda3/envs/yxymakefile/lib/python3.8/site-packages/trtpy/trt8cuda112cudnn8/include/cuda/cuda_runtime.h \
     /home/shenlan09/miniconda3/envs/yxymakefile/lib/python3.8/site-packages/trtpy/trt8cuda112cudnn8/include/cuda/crt/host_config.h \
