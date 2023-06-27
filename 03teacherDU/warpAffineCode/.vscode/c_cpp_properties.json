@@ -1,0 +1,22 @@
+{
+    "configurations": [
+        {
+            "name": "Linux",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "/home/shenlan09/miniconda3/envs/yxymakefile/lib/python3.8/site-packages/trtpy/trt8cuda112cudnn8/include/**",
+                "/home/shenlan09/miniconda3/envs/yxymakefile/lib/python3.8/site-packages/trtpy/cpp-packages/opencv4.2/include/**",
+                "/home/tensorrt/TensorRT-8.0.1.6/include/**",
+                "/home/tensorrt/TensorRT-8.0.1.6/lib/**"
+
+            ],
+            "defines": [],
+            "compilerPath": "/usr/bin/gcc",
+            "cStandard": "c11",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "linux-gcc-x64",
+            "configurationProvider": "ms-vscode.makefile-tools"
+        }
+    ],
+    "version": 4
+}
