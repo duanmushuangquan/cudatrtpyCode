@@ -25,17 +25,19 @@ cu_mk   := $(cu_objs:.cu.o=.cu.mk)
 # 定义opencv和cuda需要用到的库文件
 link_cuda      := cudart cudnn
 link_trtpro    := 
-link_tensorRT  := nvinfer
+link_tensorRT  := nvinfer nvinfer_plugin
 link_opencv    := 
-link_sys       := stdc++ dl
+link_sys       := stdc++ dl protobuf
 link_librarys  := $(link_cuda) $(link_tensorRT) $(link_sys) $(link_opencv)
 
 # 定义头文件路径，请注意斜杠后边不能有空格
 # 只需要写路径，不需要写-I
-include_paths := src              \
-    $(cuda_home)/include/cuda     \
-	$(cuda_home)/include/tensorRT \
-	$(cpp_pkg)/opencv4.2/include
+include_paths := src               \
+    $(cuda_home)/include/cuda      \
+    $(cuda_home)/include/cudnn     \
+	$(cuda_home)/include/tensorRT  \
+	$(cpp_pkg)/opencv4.2/include   \
+	$(cuda_home)/include/protobuf
 
 # 定义库文件路径，只需要写路径，不需要写-L
 library_paths := $(cuda_home)/lib64 $(syslib) $(cpp_pkg)/opencv4.2/lib
@@ -102,7 +104,7 @@ $(objdir)/%.cu.mk : $(srcdir)/%.cu
 
 # 定义清理指令
 clean :
-	@rm -rf $(objdir) $(workdir)/$(name) $(workdir)/*.trtmodel
+	@rm -rf $(objdir) $(workdir)/$(name) $(workdir)/*.trtmodel $(workdir)/demo.onnx
 
 # 防止符号被当做文件
 .PHONY : clean run $(name)

@@ -12,6 +12,12 @@
             "externalConsole": false,
             "MIMode": "gdb",
             "miDebuggerPath": "/usr/bin/gdb",
+            "environment": [
+                {
+                    "name": "LD_LIBRARY_PATH", 
+                    "value": "/home/shenlan09/miniconda3/envs/yxymakefile/lib/python3.8/site-packages/trtpy/trt8cuda112cudnn8/lib64:/home/shenlan09/miniconda3/envs/yxymakefile/lib:/home/shenlan09/miniconda3/envs/yxymakefile/lib/python3.8/site-packages/trtpy/trt8cuda112cudnn8/py38:/home/shenlan09/miniconda3/envs/yxymakefile/lib/python3.8/site-packages/trtpy/cpp-packages/opencv4.2/lib:/home/shenlan09/miniconda3/envs/yxymakefile/lib/python3.8/site-packages/trtpy/lib:$LD_LIBRARY_PATH"
+                }
+            ],
             "setupCommands": [
                 {
                     "text": "-enable-pretty-printing",

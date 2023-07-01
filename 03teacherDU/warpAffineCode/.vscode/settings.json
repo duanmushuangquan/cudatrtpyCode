@@ -54,6 +54,10 @@
         "utility": "cpp",
         "valarray": "cpp",
         "string": "cpp",
-        "iterator": "cpp"
+        "iterator": "cpp",
+        "__functional_03": "cpp",
+        "__tree": "cpp",
+        "memory_resource": "cpp",
+        "unordered_set": "cpp"
     }
 }

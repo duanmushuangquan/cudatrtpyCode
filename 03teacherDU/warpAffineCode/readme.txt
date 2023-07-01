@@ -1,0 +1,1 @@
+/home/shenlan09/miniconda3/bin/python /home/shenlan09/YXY/trtpyStudy/cudatrtpyCode/03teacherDU/warpAffineCode/createResnet.py

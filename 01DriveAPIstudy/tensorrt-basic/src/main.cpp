@@ -1,6 +1,12 @@
 
 // tensorRT include
+// 编译用的头文件
 #include <NvInfer.h>
+
+// onnx解析器的头文件
+#include <onnx-tensorrt/NvOnnxParser.h>
+
+// 推理用的运行时头文件
 #include <NvInferRuntime.h>
 
 // cuda include
@@ -15,26 +21,46 @@
 #include <vector>
 
 using namespace std;
-// 上一节的代码
+
+inline const char* severity_string(nvinfer1::ILogger::Severity t){
+    switch(t){
+        case nvinfer1::ILogger::Severity::kINTERNAL_ERROR: return "internal_error";
+        case nvinfer1::ILogger::Severity::kERROR:   return "error";
+        case nvinfer1::ILogger::Severity::kWARNING: return "warning";
+        case nvinfer1::ILogger::Severity::kINFO:    return "info";
+        case nvinfer1::ILogger::Severity::kVERBOSE: return "verbose";
+        default: return "unknow";
+    }
+}
 
 class TRTLogger : public nvinfer1::ILogger{
 public:
     virtual void log(Severity severity, nvinfer1::AsciiChar const* msg) noexcept override{
         if(severity <= Severity::kINFO){
-            printf("%d: %s\n", severity, msg);
+            // 打印带颜色的字符，格式如下：
+            // printf("\033[47;33m打印的文本\033[0m");
+            // 其中 \033[ 是起始标记
+            //      47    是背景颜色
+            //      ;     分隔符
+            //      33    文字颜色
+            //      m     开始标记结束
+            //      \033[0m 是终止标记
+            // 其中背景颜色或者文字颜色可不写
+            // 部分颜色代码 https://blog.csdn.net/ericbar/article/details/79652086
+            if(severity == Severity::kWARNING){
+                printf("\033[33m%s: %s\033[0m\n", severity_string(severity), msg);
+            }
+            else if(severity <= Severity::kERROR){
+                printf("\033[31m%s: %s\033[0m\n", severity_string(severity), msg);
+            }
+            else{
+                printf("%s: %s\n", severity_string(severity), msg);
+            }
         }
     }
 } logger;
 
-nvinfer1::Weights make_weights(float* ptr, int n){
-    nvinfer1::Weights w;
-    w.count = n;
-    w.type = nvinfer1::DataType::kFLOAT;
-    w.values = ptr;
-    return w;
-}
-
-
+// 上一节的代码
 bool build_model(){
     TRTLogger logger;
 
@@ -43,36 +69,29 @@ bool build_model(){
     nvinfer1::IBuilderConfig* config = builder->createBuilderConfig();
     nvinfer1::INetworkDefinition* network = builder->createNetworkV2(1);
 
-    // 构建一个模型
-    /*
-        Network definition:
+    // 通过onnxparser解析器解析的结果会填充到network中，类似addConv的方式添加进去
+    nvonnxparser::IParser* parser = nvonnxparser::createParser(*network, logger);
+    if(!parser->parseFromFile("demo.onnx", 1)){
+        printf("Failed to parse demo.onnx\n");
 
-        image
-          |
-        linear (fully connected)  input = 3, output = 2, bias = True     w=[[1.0, 2.0, 0.5], [0.1, 0.2, 0.5]], b=[0.3, 0.8]
-          |
-        sigmoid
-          |
-        prob
-    */
-
-    const int num_input = 3;
-    const int num_output = 2;
-    float layer1_weight_values[] = {1.0, 2.0, 0.5, 0.1, 0.2, 0.5};
-    float layer1_bias_values[]   = {0.3, 0.8};
-
-    nvinfer1::ITensor* input = network->addInput("image", nvinfer1::DataType::kFLOAT, nvinfer1::Dims4(1, num_input, 1, 1));
-    nvinfer1::Weights layer1_weight = make_weights(layer1_weight_values, 6);
-    nvinfer1::Weights layer1_bias   = make_weights(layer1_bias_values, 2);
-    auto layer1 = network->addFullyConnected(*input, num_output, layer1_weight, layer1_bias);
-    auto prob = network->addActivation(*layer1->getOutput(0), nvinfer1::ActivationType::kSIGMOID);
+        // 注意这里的几个指针还没有释放，是有内存泄漏的，后面考虑更优雅的解决
+        return false;
+    }
     
-    // 将我们需要的prob标记为输出
-    network->markOutput(*prob->getOutput(0));
-
+    int maxBatchSize = 10;
     printf("Workspace Size = %.2f MB\n", (1 << 28) / 1024.0f / 1024.0f);
     config->setMaxWorkspaceSize(1 << 28);
-    builder->setMaxBatchSize(1);
+
+    // 如果模型有多个输入，则必须多个profile
+    auto profile = builder->createOptimizationProfile();
+    auto input_tensor = network->getInput(0);
+    int input_channel = input_tensor->getDimensions().d[1];
+    
+    // 配置输入的最小、最优、最大的范围
+    profile->setDimensions(input_tensor->getName(), nvinfer1::OptProfileSelector::kMIN, nvinfer1::Dims4(1, input_channel, 3, 3));
+    profile->setDimensions(input_tensor->getName(), nvinfer1::OptProfileSelector::kOPT, nvinfer1::Dims4(1, input_channel, 3, 3));
+    profile->setDimensions(input_tensor->getName(), nvinfer1::OptProfileSelector::kMAX, nvinfer1::Dims4(maxBatchSize, input_channel, 5, 5));
+    config->addOptimizationProfile(profile);
 
     nvinfer1::ICudaEngine* engine = builder->buildEngineWithConfig(*network, *config);
     if(engine == nullptr){
@@ -88,6 +107,7 @@ bool build_model(){
 
     // 卸载顺序按照构建顺序倒序
     model_data->destroy();
+    parser->destroy();
     engine->destroy();
     network->destroy();
     config->destroy();
@@ -96,7 +116,7 @@ bool build_model(){
     return true;
 }
 
-
+///////////////////////////////////////////////////////////////////////////////////////////////////////
 
 vector<unsigned char> load_file(const string& file){
     ifstream in(file, ios::in | ios::binary);
@@ -119,12 +139,9 @@ vector<unsigned char> load_file(const string& file){
 
 void inference(){
 
-    // ------------------------------ 1. 准备模型并加载   ----------------------------
     TRTLogger logger;
     auto engine_data = load_file("engine.trtmodel");
-    // 执行推理前，需要创建一个推理的runtime接口实例。与builer一样，runtime需要logger：
     nvinfer1::IRuntime* runtime   = nvinfer1::createInferRuntime(logger);
-    // 将模型从读取到engine_data中，则可以对其进行反序列化以获得engine
     nvinfer1::ICudaEngine* engine = runtime->deserializeCudaEngine(engine_data.data(), engine_data.size());
     if(engine == nullptr){
         printf("Deserialize cuda engine failed.\n");
@@ -134,68 +151,57 @@ void inference(){
 
     nvinfer1::IExecutionContext* execution_context = engine->createExecutionContext();
     cudaStream_t stream = nullptr;
-    // 创建CUDA流，以确定这个batch的推理是独立的
     cudaStreamCreate(&stream);
 
-    /*
-        Network definition:
+    float input_data_host[] = {
+        // batch 0
+        1,   1,   1,
+        1,   1,   1,
+        1,   1,   1,
 
-        image
-          |
-        linear (fully connected)  input = 3, output = 2, bias = True     w=[[1.0, 2.0, 0.5], [0.1, 0.2, 0.5]], b=[0.3, 0.8]
-          |
-        sigmoid
-          |
-        prob
-    */
-
-    // ------------------------------ 2. 准备好要推理的数据并搬运到GPU   ----------------------------
-    float input_data_host[] = {1, 2, 3};
+        // batch 1
+        -1,   1,   1,
+        1,   0,   1,
+        1,   1,   -1
+    };
     float* input_data_device = nullptr;
 
-    float output_data_host[2];
+    // 3x3输入，对应3x3输出
+    int ib = 2;
+    int iw = 3;
+    int ih = 3;
+    float output_data_host[ib * iw * ih];
     float* output_data_device = nullptr;
     cudaMalloc(&input_data_device, sizeof(input_data_host));
     cudaMalloc(&output_data_device, sizeof(output_data_host));
     cudaMemcpyAsync(input_data_device, input_data_host, sizeof(input_data_host), cudaMemcpyHostToDevice, stream);
-    // 用一个指针数组指定input和output在gpu中的指针。
-    float* bindings[] = {input_data_device, output_data_device};
 
-    // ------------------------------ 3. 推理并将结果搬运回CPU   ----------------------------
+    // 明确当前推理时，使用的数据输入大小
+    execution_context->setBindingDimensions(0, nvinfer1::Dims4(ib, 1, ih, iw));
+    float* bindings[] = {input_data_device, output_data_device};
     bool success      = execution_context->enqueueV2((void**)bindings, stream, nullptr);
     cudaMemcpyAsync(output_data_host, output_data_device, sizeof(output_data_host), cudaMemcpyDeviceToHost, stream);
     cudaStreamSynchronize(stream);
 
-    printf("output_data_host = %f, %f\n", output_data_host[0], output_data_host[1]);
+    for(int b = 0; b < ib; ++b){
+        printf("batch %d. output_data_host = \n", b);
+        for(int i = 0; i < iw * ih; ++i){
+            printf("%f, ", output_data_host[b * iw * ih + i]);
+            if((i + 1) % iw == 0)
+                printf("\n");
+        }
+    }
 
-    // ------------------------------ 4. 释放内存 ----------------------------
     printf("Clean memory\n");
     cudaStreamDestroy(stream);
+    cudaFree(input_data_device);
+    cudaFree(output_data_device);
     execution_context->destroy();
     engine->destroy();
     runtime->destroy();
-
-    // ------------------------------ 5. 手动推理进行验证 ----------------------------
-    const int num_input = 3;
-    const int num_output = 2;
-    float layer1_weight_values[] = {1.0, 2.0, 0.5, 0.1, 0.2, 0.5};
-    float layer1_bias_values[]   = {0.3, 0.8};
-
-    printf("手动验证计算结果：\n");
-    for(int io = 0; io < num_output; ++io){
-        float output_host = layer1_bias_values[io];
-        for(int ii = 0; ii < num_input; ++ii){
-            output_host += layer1_weight_values[io * num_input + ii] * input_data_host[ii];
-        }
-
-        // sigmoid
-        float prob = 1 / (1 + exp(-output_host));
-        printf("output_prob[%d] = %f\n", io, prob);
-    }
 }
 
 int main(){
-
     if(!build_model()){
         return -1;
     }

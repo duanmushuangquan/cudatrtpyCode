@@ -1,33 +1,29 @@
-# 项目目标：学会使用tensorRT去推理构建好的模型
-## 运行
-```bash
-make run
-```
+# 知识点
+1. 对插件进行了封装，使得用起来更简单
+2. 在onnx-tensorrt中添加了onnxplugin.cpp，实现对IPluginV2DynamicExt的封装
+3. 在onnx-tensorrt/builtin_op_importers.cpp:5095行，添加了Plugin的解析支持
+    - DEFINE_BUILTIN_OP_IMPORTER(Plugin)
+    - 使得只要名字是Plugin的节点，都可以解释到该函数上
+    - 在代码中，为通用插件提供了支持，使得使用者只需要继承简单的插件接口即可完成需求
+4. 在gen-onnx.py导出时，symbolic函数返回时，g.op返回的永远都是Plugin这个名字，然后name_s指定为自己注册的插件名称，info_s则传递为json字符串，那么复合属性就可以轻易得到支持
 
-## 知识点
-执行推理的步骤：
-  1. 准备模型并加载
-  2. 创建runtime：`createInferRuntime(logger)`
-  3. 使用运行时时，以下步骤：
-     1. 反序列化创建engine, 得为engine提供数据：`runtime->deserializeCudaEngine(modelData, modelSize)`,其中`modelData`包含的是input和output的名字，形状，大小和数据类型
-        ```cpp
-        class ModelData(object):
-        INPUT_NAME = "data"
-        INPUT_SHAPE = (1, 1, 28, 28) // [B, C, H, W]
-        OUTPUT_NAME = "prob"
-        OUTPUT_SIZE = 10
-        DTYPE = trt.float32
-        ```
 
-     2. 从engine创建执行上下文:`engine->createExecutionContext()`
-  4. 创建CUDA流`cudaStreamCreate(&stream)`：
-     1. CUDA编程流是组织异步工作的一种方式，创建流来确定batch推理的独立
-     2. 为每个独立batch使用IExecutionContext(3.2中已经创建了)，并为每个独立批次使用cudaStreamCreate创建CUDA流。
-     
-  5. 数据准备：
-     1. 在host上声明`input`数据和`output`数组大小，搬运到gpu上
-     2. 要执行inference，必须用一个指针数组指定`input`和`output`在gpu中的指针。
-     3. 推理并将`output`搬运回CPU
-  6. 启动所有工作后，与所有流同步以等待结果:`cudaStreamSynchronize`
-  7. 按照与创建相反的顺序释放内存
-
+# 封装后的插件实现
+1. 导出onnx时，按照gen-onnx.py，在symbolic函数返回时，指定g.op的name为Plugin
+2. 指定g.op中name_s属性为注册的插件名称，对应后续插件类的类名
+3. 指定g.op中info_属性为需要读取的复合属性，字符串。通常可以传递json，使得属性再复杂都可以，避免使用官方的方式
+4. 创建easy-plugin.cu文件，定义自己的类并继承自ONNXPlugin::TRTPlugin
+5. 实现需要的函数
+    - config_finish[非必要]：配置完成函数
+        - 当插件配置完毕时调用，可以在其中拿到各种属性，例如info、weights等
+    - new_config[非必要]：实例化一个配置对象
+        - 可以自定义LayerConfig类并返回，也可以直接使用LayerConfig类
+        - 这个函数最大的作用，是配置本插件支持的数据格式和类型。比如fp32和fp16的支持等
+    - getOutputDimensions[非必要]，获取该插件输出的shape大小，默认取第一个输入的大小
+        - 对应于原始插件的getOutputDimensions函数
+    - enqueue[必要]，插件推理过程
+        - 插件的实际推理过程，该函数可能在编译和推理阶段数次调用
+6. 注册插件，使用RegisterPlugin宏
+    - RegisterPlugin(MYSELU);
+    - 格式是RegisterPlugin(类名);
+7. 好了，可以使用插件了

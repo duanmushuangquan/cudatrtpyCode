@@ -107,12 +107,12 @@
 //     return 0;
 // }
 
-#include <stdio.h>
+// #include <stdio.h>
 
-void foo();
+// void foo();
 
-int main() {
+// int main() {
 
-	foo();
-	return 0;
-}
+// 	foo();
+// 	return 0;
+// }
