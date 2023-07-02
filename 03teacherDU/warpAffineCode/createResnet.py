@@ -24,7 +24,7 @@ trans = T.Compose([
     T.Lambda(lambda x : x.unsqueeze(dim=0).cuda())
 ])
 
-image = cv2.imread("dog.jpg")
+image = cv2.imread("kj.jpg")
 image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 image = cv2.resize(image, (224, 224))
 
@@ -41,11 +41,11 @@ with open("labels.imagenet.txt", "r") as f:
 print(f"类别={label}, 中文名={labels[label].strip()}, 置信度{confidence}")
 
 
-import torch.onnx
-torch.onnx.export(model, 
-                  (torch_image,), 
-                  "resnet18.onnx", 
-                  input_names=["image"], 
-                  output_names=["Predict"],
-                  opset_version=11,
-                  verbose=True)
+# import torch.onnx
+# torch.onnx.export(model, 
+#                   (torch_image,), 
+#                   "resnet18.onnx", 
+#                   input_names=["image"], 
+#                   output_names=["Predict"],
+#                   opset_version=11,
+#                   verbose=True)

@@ -2,9 +2,10 @@
 // tensorRT include
 // 编译用的头文件
 #include <NvInfer.h>
+// #include <cudnn.h>
 
 // onnx解析器的头文件
-#include <onnx-tensorrt/NvOnnxParser.h>
+#include <onnx-tensorrt-8.0-GA/NvOnnxParser.h>
 
 // 推理用的运行时头文件
 #include <NvInferRuntime.h>

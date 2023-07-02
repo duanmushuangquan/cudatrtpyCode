@@ -25,7 +25,7 @@ objs/95.tensorrt_read_onnx.cpp.o: src/95.tensorrt_read_onnx.cpp \
  /usr/lib/gcc/x86_64-linux-gnu/5/include/stdarg.h \
  /usr/include/x86_64-linux-gnu/bits/stdio_lim.h \
  /usr/include/x86_64-linux-gnu/bits/sys_errlist.h \
- src/onnx-tensorrt-release-8.0/NvOnnxParser.h /usr/include/c++/5/vector \
+ src/onnx-tensorrt-8.0-GA/NvOnnxParser.h /usr/include/c++/5/vector \
  /usr/include/c++/5/bits/stl_algobase.h \
  /usr/include/c++/5/bits/functexcept.h \
  /usr/include/c++/5/bits/exception_defines.h \
